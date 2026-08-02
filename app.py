@@ -32,6 +32,19 @@ st.sidebar.write("""
 5. Candidate Summary
 """)
 
+
+st.sidebar.title("🔑 API Configuration")
+
+api_key = st.sidebar.text_input(
+    "Enter your OpenAI API Key",
+    type="password"
+)
+
+st.session_state["OPENAI_API_KEY"] = api_key
+
+if not api_key:
+    st.warning("Please enter your OpenAI API key to use the application.")
+    st.stop()
 # -----------------------------
 # Inputs
 # -----------------------------
@@ -239,3 +252,5 @@ if st.button("Start Recruitment Workflow"):
                 st.warning("Some steps reported issues:")
                 for err in result["errors"]:
                     st.write(f"- {err}")
+
+
