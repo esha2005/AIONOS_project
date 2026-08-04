@@ -1,7 +1,10 @@
 import streamlit as st
 
 from services.pdf_loadder import extract_text_from_pdf
-from graph.workflow import recruitment_graph
+# NOTE: `graph.workflow` (and the agents it imports) construct the LLM
+# at import time via LLMService.get_llm(), which needs the API key to
+# already be in st.session_state. So we do NOT import it here at the
+# top level - it's imported further down, only after the key gate.
 
 # -----------------------------
 # Page Configuration
@@ -12,6 +15,48 @@ st.set_page_config(
     layout="wide"
 )
 
+if "OPENAI_API_KEY" not in st.session_state:
+    st.session_state["OPENAI_API_KEY"] = ""
+
+# -----------------------------
+# API Key Gate Screen
+# -----------------------------
+# Nothing else in the app renders until a key has been provided.
+if not st.session_state["OPENAI_API_KEY"]:
+
+    st.title("💼 AI HR Recruitment Assistant")
+
+    st.markdown(
+        "### 🔑 Enter your OpenAI API Key to get started\n"
+        "Your key is only stored for this session and is never saved on the server."
+    )
+
+    with st.form("api_key_form"):
+        key_input = st.text_input(
+            "OpenAI API Key",
+            type="password",
+            placeholder="sk-..."
+        )
+        submitted = st.form_submit_button("Continue")
+
+        if submitted:
+            if key_input.strip():
+                st.session_state["OPENAI_API_KEY"] = key_input.strip()
+                st.rerun()
+            else:
+                st.error("Please enter a valid API key.")
+
+    st.stop()
+
+api_key = st.session_state["OPENAI_API_KEY"]
+
+# Safe to import now - the key is already in st.session_state,
+# so LLMService.get_llm() (called at import time by the agents) will succeed.
+from graph.workflow import recruitment_graph
+
+# -----------------------------
+# Main App (only reached once a key is set)
+# -----------------------------
 st.title("💼 AI HR Recruitment Assistant")
 st.markdown(
     "Upload a candidate resume and paste a job description."
@@ -32,19 +77,13 @@ st.sidebar.write("""
 5. Candidate Summary
 """)
 
-
 st.sidebar.title("🔑 API Configuration")
+st.sidebar.success("API key set for this session ✅")
 
-api_key = st.sidebar.text_input(
-    "Enter your OpenAI API Key",
-    type="password"
-)
+if st.sidebar.button("Change API Key"):
+    st.session_state["OPENAI_API_KEY"] = ""
+    st.rerun()
 
-st.session_state["OPENAI_API_KEY"] = api_key
-
-if not api_key:
-    st.warning("Please enter your OpenAI API key to use the application.")
-    st.stop()
 # -----------------------------
 # Inputs
 # -----------------------------
@@ -252,5 +291,3 @@ if st.button("Start Recruitment Workflow"):
                 st.warning("Some steps reported issues:")
                 for err in result["errors"]:
                     st.write(f"- {err}")
-
-
