@@ -19,6 +19,7 @@ def _get_cached_llm(provider: str, key: str, model_name: str):
 
         fallback_candidates = [
             m for m in [
+                "gemini-3.5-flash",
                 "gemini-2.0-flash",
                 "gemini-1.5-flash",
                 "gemini-1.5-pro",
@@ -71,7 +72,7 @@ class LLMService:
             if not key:
                 raise ValueError("Please provide a valid Google Gemini API Key.")
 
-            chosen_model = session_model or os.getenv("GEMINI_MODEL_NAME") or "gemini-2.0-flash"
+            chosen_model = session_model or os.getenv("GEMINI_MODEL_NAME") or "gemini-3.5-flash"
 
             return _get_cached_llm("gemini", key, chosen_model)
         else:

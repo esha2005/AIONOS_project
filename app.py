@@ -62,6 +62,7 @@ if not st.session_state["API_KEY"]:
         gemini_model = st.selectbox(
             "Gemini Model (if Google Gemini selected)",
             [
+                "gemini-3.5-flash",
                 "gemini-2.0-flash",
                 "gemini-1.5-flash",
                 "gemini-1.5-pro",
@@ -98,7 +99,7 @@ from graph.workflow import recruitment_graph
 # Sidebar Navigation
 # -----------------------------
 st.sidebar.title("⚡ AIONOS AI HR Suite")
-current_model = st.session_state.get("GEMINI_MODEL_NAME", "gemini-2.0-flash") if st.session_state.get("LLM_PROVIDER") == "Google Gemini" else "OpenAI"
+current_model = st.session_state.get("GEMINI_MODEL_NAME", "gemini-3.5-flash") if st.session_state.get("LLM_PROVIDER") == "Google Gemini" else "OpenAI"
 st.sidebar.caption(f"Provider: {st.session_state['LLM_PROVIDER']} ({current_model}) ✅")
 
 if st.sidebar.button("⚙️ Reset API Key"):
