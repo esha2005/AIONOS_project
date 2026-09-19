@@ -13,17 +13,15 @@ from prompts.prompts import SKILL_MATCH_PROMPT
 from models.skill_match import SkillMatch
 
 
-llm = LLMService.get_llm()
-
-structured_llm = llm.with_structured_output(SkillMatch)
-
-
-prompt = ChatPromptTemplate.from_messages(
-    [
-        ("system", SKILL_MATCH_PROMPT),
-        (
-            "human",
-            """
+def skill_matcher_agent(state: RecruitmentState):
+    llm = LLMService.get_llm()
+    structured_llm = llm.with_structured_output(SkillMatch)
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", SKILL_MATCH_PROMPT),
+            (
+                "human",
+                """
 Job Description
 
 {job_description}
@@ -31,25 +29,28 @@ Job Description
 Candidate Skills
 
 {skills}
-            """
-        ),
-    ]
-)
+                """
+            ),
+        ]
+    )
+    chain = prompt | structured_llm
 
-chain = prompt | structured_llm
-
-
-def skill_matcher_agent(state: RecruitmentState):
+    skills_list = state.get("extracted_skills", []) or []
+    skills_str = ", ".join(skills_list) if skills_list else "None listed"
 
     result = chain.invoke(
         {
-            "job_description": state["job_description"],
-            "skills": ", ".join(state["extracted_skills"]),
+            "job_description": (state.get("job_description", "") or "").strip() or "N/A",
+            "skills": skills_str,
         }
     )
 
-    state["matched_skills"] = result.matched_skills
-    state["missing_skills"] = result.missing_skills
-    state["match_score"] = result.match_score
+    state["matched_skills"] = getattr(result, "matched_skills", []) or []
+    state["missing_skills"] = getattr(result, "missing_skills", []) or []
+    score_val = getattr(result, "match_score", 0.0)
+    try:
+        state["match_score"] = float(score_val)
+    except (ValueError, TypeError):
+        state["match_score"] = 0.0
 
-    return state
+    return state

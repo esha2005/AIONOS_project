@@ -13,40 +13,31 @@ from graph.state import RecruitmentState
 from models.resume import Resume
 
 
-llm = LLMService.get_llm()
-
-structured_llm = llm.with_structured_output(Resume)
-
-
-prompt = ChatPromptTemplate.from_messages(
-    [
-        ("system", RESUME_PARSER_PROMPT),
-    ]
-)
-
-
 def resume_parser_agent(
     state: RecruitmentState,
 ):
-
+    llm = LLMService.get_llm()
+    structured_llm = llm.with_structured_output(Resume)
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", "You are an expert HR Resume Parsing Assistant. Extract candidate information structured accurately."),
+        ("human", "Extract info from resume:\n{resume}")
+    ])
     chain = prompt | structured_llm
+
+    resume_raw = state.get("resume_text", "") or ""
+    resume_content = resume_raw.strip() or "No resume text provided."
 
     result = chain.invoke(
         {
-            "resume": state["resume_text"]
+            "resume": resume_content
         }
     )
 
-    state["candidate_name"] = result.candidate_name
+    state["candidate_name"] = (getattr(result, "candidate_name", "") or "").strip() or "Candidate"
+    state["candidate_email"] = (getattr(result, "candidate_email", "") or "").strip() or "N/A"
+    state["candidate_phone"] = (getattr(result, "candidate_phone", "") or "").strip() or "N/A"
+    state["education"] = (getattr(result, "education", "") or "").strip() or "Not specified"
+    state["experience"] = (getattr(result, "experience", "") or "").strip() or "Not specified"
+    state["extracted_skills"] = getattr(result, "extracted_skills", []) or []
 
-    state["candidate_email"] = result.candidate_email
-
-    state["candidate_phone"] = result.candidate_phone
-
-    state["education"] = result.education
-
-    state["experience"] = result.experience
-
-    state["extracted_skills"] = result.extracted_skills
-
-    return state
+    return state

@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  ai-hr-agent:
+    build: .
+    ports:
+      - "8501:8501"
+      - "8000:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+    volumes:
+      - ./recruitment.db:/app/recruitment.db

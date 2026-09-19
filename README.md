@@ -1,565 +1,89 @@
-# 🤖 AI HR Recruitment Assistant
+# 💼 AIONOS Agentic AI HR Recruitment Platform
 
-An **Agentic AI Recruitment System** built with **LangGraph, LangChain, OpenAI, and Streamlit** that automates the early stages of the recruitment process.
-
-Instead of using a single prompt, this application follows a **Sequential Agent Workflow** where multiple AI agents collaborate to analyze a candidate's resume, compare it with a job description, generate interview questions, and provide a hiring recommendation.
-
----
-
-# Project Objective
-
-Recruiters often spend a significant amount of time reviewing resumes, comparing candidates against job requirements, and preparing interviews.
-
-This project demonstrates how an Agentic AI workflow can automate these repetitive tasks while keeping the final hiring decision with the HR team.
-
-The system is designed as a portfolio project to showcase modern AI engineering concepts such as:
-
-* LangGraph Workflows
-* Multi-Agent Systems
-* Large Language Models (LLMs)
-* Structured Outputs
-* Prompt Engineering
-* State Management
-* Streamlit Applications
+> **AIONOS Agentic AI Factory Internship Submission**  
+> Built to automate candidate screening, skill matching, interview generation, batch candidate ranking, and recruitment audit logs using multi-agent state graph orchestration.
 
 ---
 
-# Tech Stack
+## 🚀 Key Features
 
-| Technology          | Purpose                |
-| ------------------- | ---------------------- |
-| Python              | Backend                |
-| Streamlit           | Web Interface          |
-| LangGraph           | Workflow Orchestration |
-| LangChain           | LLM Framework          |
-| OpenAI GPT-4.1 Mini | Language Model         |
-| Pydantic            | Structured Outputs     |
-| PyPDF               | Resume Text Extraction |
-| Python-dotenv       | Environment Variables  |
+1. **Multi-Agent Orchestration (LangGraph)**:
+   - **Resume Parser Agent**: Extracts structured candidate entities from raw PDF files.
+   - **HR Screening Agent**: Audits match quality against specific Job Description requirements.
+   - **Skill Matcher Agent**: Generates matched vs missing skills and calculates overall fit score.
+   - **Interview Generator Agent**: Produces difficulty-tiered technical interview questions (Easy, Intermediate, Advanced).
+   - **Summary Agent**: Synthesizes final hiring recommendations (`Hire`, `Technical Interview`, `Hold`, `Reject`).
+
+2. **Full-Stack Architecture**:
+   - **Interactive Web App (`app.py`)**: Glassmorphic UI supporting Single Resume Audit, Batch Candidate Leaderboards, and Evaluation Logs.
+   - **REST API Backend (`server.py`)**: High-performance FastAPI endpoints for third-party ATS integration (`/api/v1/evaluate`, `/api/v1/evaluations`).
+   - **Database Persistence (`services/database.py`)**: SQLite storage for tracking candidate history.
+   - **Multi-Model LLM Support**: Supports both **OpenAI** (`gpt-4o`/`gpt-4o-mini`) and **Google Gemini** (`gemini-1.5-flash`).
+
+3. **Report Generation & Leaderboards**:
+   - **Batch Candidate Leaderboard**: Compares and ranks multiple resumes against a single Job Description.
+   - **Exportable Assessment Reports**: Generates downloadable text reports for HR records.
 
 ---
 
-# Project Architecture
+## 🛠️ Quick Start & Installation
 
-```text
-                    User
+### 1. Local Setup
+```bash
+# Clone the repository (if not already local)
+git clone https://github.com/kiran-hayat/AI-HR-Recruitment-Agent.git
+cd AI-HR-Recruitment-Agent
 
-                     │
+# Install dependencies
+pip install -r requirements.txt
+```
 
-                     ▼
+### 2. Running the Interactive UI (Streamlit)
+```bash
+streamlit run app.py
+```
+Open your browser at `http://localhost:8501`. Choose your LLM Provider (OpenAI or Gemini), input your API Key, and upload candidate resumes!
 
-             Streamlit Interface
+### 3. Running the Production REST API (FastAPI)
+```bash
+python server.py
+# or using uvicorn
+uvicorn server:app --reload --port 8000
+```
+Swagger UI docs available at `http://localhost:8000/docs`.
 
-                     │
+---
 
-                     ▼
+## 🧪 Testing
 
-          Upload Resume (PDF)
-
-                     │
-
-                     ▼
-
-           Paste Job Description
-
-                     │
-
-                     ▼
-
-            LangGraph Workflow
-
-                     │
-
-     ┌───────────────┴────────────────┐
-
-                     ▼
-
-          Resume Parser Agent
-
-                     │
-
-                     ▼
-
-         HR Screening Agent
-
-                     │
-
-                     ▼
-
-          Skill Matching Agent
-
-                     │
-
-                     ▼
-
-     Interview Question Agent
-
-                     │
-
-                     ▼
-
-        Candidate Summary Agent
-
-                     │
-
-                     ▼
-
-          Final Hiring Decision
+Run the automated test suite:
+```bash
+python -m unittest tests/test_core.py
 ```
 
 ---
 
-# Sequential Workflow
+## 🐳 Docker Deployment
 
-This project uses a **Sequential Workflow**, meaning every agent waits for the previous agent to complete before executing.
-
-```text
-START
-
-↓
-
-Resume Parser
-
-↓
-
-Resume Screening
-
-↓
-
-Skill Matching
-
-↓
-
-Interview Question Generator
-
-↓
-
-Candidate Summary
-
-↓
-
-END
+```bash
+docker-compose up --build
 ```
-
-Each agent updates a shared state object, and the next agent uses the updated information.
+- **Streamlit App**: `http://localhost:8501`
+- **FastAPI Endpoints**: `http://localhost:8000`
 
 ---
 
-# Shared State (LangGraph State)
+## 📂 Architecture Overview
 
-The workflow maintains a shared state throughout execution.
-
-Typical fields include:
-
-```python
-resume_text
-
-job_description
-
-candidate_name
-
-candidate_email
-
-candidate_phone
-
-education
-
-experience
-
-extracted_skills
-
-screening_result
-
-matched_skills
-
-missing_skills
-
-match_score
-
-easy_questions
-
-intermediate_questions
-
-advanced_questions
-
-strengths
-
-weaknesses
-
-recommendation
-
-final_summary
-
-errors
 ```
-
-Every node receives this state, modifies it, and passes it to the next node.
-
----
-
-# Agent 1 — Resume Parser
-
-## Purpose
-
-Extract structured information from an uploaded resume.
-
-## Input
-
-* Resume PDF
-
-## Processing
-
-* Extract PDF text
-* Send text to GPT
-* Convert response into structured data
-
-## Output
-
-* Candidate Name
-* Email
-* Phone
-* Education
-* Experience
-* Skills
-
-Example
-
-```text
-John Smith
-
-Email:
-john@gmail.com
-
-Phone:
-+92-300-1234567
-
-Education:
-BS Computer Science
-
-Skills:
-Python
-SQL
-TensorFlow
-Machine Learning
-```
-
----
-
-# Agent 2 — Resume Screening
-
-## Purpose
-
-Evaluate whether the candidate generally fits the job.
-
-The agent analyzes
-
-* Experience
-* Education
-* Technical Skills
-* Resume Quality
-
-Example Output
-
-```text
-Overall Suitability:
-Good
-
-Strengths
-
-• Relevant experience
-
-• Strong Python knowledge
-
-Weaknesses
-
-• AWS not mentioned
-
-Recommendation
-
-Proceed to skill matching
-```
-
----
-
-# Agent 3 — Skill Matching
-
-## Purpose
-
-Compare candidate skills against the required skills from the job description.
-
-Example
-
-Job Description
-
-```text
-Python
-
-SQL
-
-Docker
-
-AWS
-
-TensorFlow
-```
-
-Candidate
-
-```text
-Python
-
-SQL
-
-TensorFlow
-```
-
-Output
-
-```text
-Matched Skills
-
-Python
-
-SQL
-
-TensorFlow
-
-Missing Skills
-
-Docker
-
-AWS
-
-Match Score
-
-60%
-```
-
----
-
-# Agent 4 — Interview Question Generator
-
-## Purpose
-
-Generate personalized interview questions based on
-
-* Experience
-* Skills
-* Missing Skills
-* Job Description
-
-Questions are divided into three categories.
-
-Easy
-
-```text
-What is Machine Learning?
-
-Explain SQL JOIN.
-```
-
-Intermediate
-
-```text
-How does Random Forest work?
-
-Explain Cross Validation.
-```
-
-Advanced
-
-```text
-Design an end-to-end recommendation system.
-
-How would you deploy a transformer model?
-```
-
----
-
-# Agent 5 — Candidate Summary
-
-The final agent combines outputs from every previous agent.
-
-It generates
-
-* Candidate Strengths
-* Candidate Weaknesses
-* Final Summary
-* Hiring Recommendation
-
-Possible recommendations
-
-* Hire
-* Technical Interview
-* Hold
-* Reject
-
-Example
-
-```text
-Recommendation
-
-Technical Interview
-
-Summary
-
-The candidate has strong experience in Python and Machine Learning with a good educational background. While cloud technologies such as Docker and AWS are missing, the overall profile is suitable for further technical evaluation.
-```
-
----
-
-# LangGraph Workflow
-
-The workflow follows this execution order.
-
-```text
-START
-
-↓
-
-Resume Parser
-
-↓
-
-Screening
-
-↓
-
-Skill Matcher
-
-↓
-
-Interview Generator
-
-↓
-
-Summary
-
-↓
-
-END
-```
-
-Each node updates the shared state.
-
----
-
-# Folder Structure
-
-```text
-AI-HR-Recruitment-Agent/
-
-│
-
-├── agents/
-
-│ ├── resume_parser.py
-
-│ ├── screening_agent.py
-
-│ ├── skill_matcher.py
-
-│ ├── interview_agent.py
-
-│ └── summary_agent.py
-
-│
-
+├── app.py                 # Streamlit Glassmorphic Frontend
+├── server.py              # FastAPI REST Endpoints
 ├── graph/
-
-│ ├── workflow.py
-
-│ └── state.py
-
-│
-
-├── models/
-
-│ ├── resume.py
-
-│ ├── skill_match.py
-
-│ ├── interview.py
-
-│ └── summary.py
-
-│
-
-├── prompts/
-
-│ └── prompts.py
-
-│
-
-├── services/
-
-│ ├── llm.py
-
-│ └── pdf_loader.py
-
-│
-
-├── config/
-
-│ └── settings.py
-
-│
-
-├── app.py
-
-├── requirements.txt
-
-├── README.md
-
-└── .env
+│   ├── state.py           # LangGraph State Definition
+│   └── workflow.py        # Multi-Agent Sequential & Dynamic Graph
+├── agents/                # LLM Sub-agents (Parser, Screening, Skill Matcher, Interview, Summary)
+├── services/              # LLM service, Database persistence, PDF loader, Report generator
+├── tests/                 # Unit test suite
+├── Dockerfile             # Container configuration
+└── docker-compose.yml     # Container orchestration
 ```
-
----
-
-# Expected User Flow
-
-1. Open the Streamlit application.
-2. Upload a resume in PDF format.
-3. Paste the job description.
-4. Click **Start Recruitment Workflow**.
-5. The workflow executes each agent sequentially.
-6. View the candidate analysis, skill match, interview questions, and hiring recommendation.
-
----
-
-# Possible Future Improvements
-
-This project can be extended with several advanced features:
-
-* Support for multiple resumes at once.
-* Resume ranking and candidate leaderboard.
-* OCR support for scanned resumes.
-* Resume embeddings stored in a vector database.
-* RAG to answer HR questions based on company policies.
-* Recruiter feedback loop for improving recommendations.
-* Email shortlisted candidates automatically.
-* Calendar integration to schedule interviews.
-* Dashboard with recruitment analytics.
-* Support for multiple LLM providers (OpenAI, Gemini, Azure OpenAI, Anthropic).
-
----
-
-# Learning Outcomes
-
-This project demonstrates practical experience with:
-
-* Agentic AI workflows.
-* Sequential workflow design.
-* LangGraph state management.
-* Prompt engineering.
-* Structured outputs with Pydantic.
-* LangChain integration.
-* Building AI-powered business applications.
-* Streamlit interface development.
-* GitHub project organization.
-
----
-
-# License
-
-This project is intended for educational and portfolio purposes. Feel free to fork, extend, and adapt it for learning or internal business prototypes.

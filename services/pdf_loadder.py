@@ -16,6 +16,9 @@ def extract_text_from_pdf(uploaded_pdf) -> str:
     (for example, a scanned/image-only PDF).
     """
 
+    if hasattr(uploaded_pdf, "seek"):
+        uploaded_pdf.seek(0)
+
     reader = PdfReader(uploaded_pdf)
 
     text_chunks = []
@@ -27,4 +30,5 @@ def extract_text_from_pdf(uploaded_pdf) -> str:
         if page_text:
             text_chunks.append(page_text)
 
-    return "\n".join(text_chunks)
+    return "\n".join(text_chunks).strip()
+

@@ -10,19 +10,15 @@ from prompts.prompts import INTERVIEW_PROMPT
 from graph.state import RecruitmentState
 
 
-llm = LLMService.get_llm()
-
-structured_llm = llm.with_structured_output(
-    InterviewQuestions
-)
-
-
-prompt = ChatPromptTemplate.from_messages(
-    [
-        ("system", INTERVIEW_PROMPT),
-        (
-            "human",
-            """
+def interview_agent(state: RecruitmentState):
+    llm = LLMService.get_llm()
+    structured_llm = llm.with_structured_output(InterviewQuestions)
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", INTERVIEW_PROMPT),
+            (
+                "human",
+                """
 Job Description
 
 {job_description}
@@ -39,26 +35,25 @@ Missing Skills
 
 {missing_skills}
 """
-        ),
-    ]
-)
+            ),
+        ]
+    )
+    chain = prompt | structured_llm
 
-chain = prompt | structured_llm
-
-
-def interview_agent(state: RecruitmentState):
+    matched = state.get("matched_skills", []) or []
+    missing = state.get("missing_skills", []) or []
 
     result = chain.invoke(
         {
-            "job_description": state["job_description"],
-            "experience": state["experience"],
-            "skills": ", ".join(state["matched_skills"]),
-            "missing_skills": ", ".join(state["missing_skills"]),
+            "job_description": (state.get("job_description", "") or "").strip() or "N/A",
+            "experience": (state.get("experience", "") or "").strip() or "Not specified",
+            "skills": ", ".join(matched) if matched else "None listed",
+            "missing_skills": ", ".join(missing) if missing else "None listed",
         }
     )
 
-    state["easy_questions"] = result.easy
-    state["intermediate_questions"] = result.intermediate
-    state["advanced_questions"] = result.advanced
+    state["easy_questions"] = getattr(result, "easy", []) or []
+    state["intermediate_questions"] = getattr(result, "intermediate", []) or []
+    state["advanced_questions"] = getattr(result, "advanced", []) or []
 
-    return state
+    return state

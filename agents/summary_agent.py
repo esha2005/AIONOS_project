@@ -9,18 +9,24 @@ from models.summary import CandidateSummary
 from prompts.prompts import SUMMARY_PROMPT
 from graph.state import RecruitmentState
 
-llm = LLMService.get_llm()
+def _safe_str(val, default=""):
+    if val is None:
+        return default
+    if isinstance(val, list):
+        res = "\n".join(str(x) for x in val if x is not None).strip()
+        return res if res else default
+    res = str(val).strip()
+    return res if res else default
 
-structured_llm = llm.with_structured_output(
-    CandidateSummary
-)
-
-prompt = ChatPromptTemplate.from_messages(
-    [
-        ("system", SUMMARY_PROMPT),
-        (
-            "human",
-            """
+def summary_agent(state: RecruitmentState):
+    llm = LLMService.get_llm()
+    structured_llm = llm.with_structured_output(CandidateSummary)
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", SUMMARY_PROMPT),
+            (
+                "human",
+                """
 Candidate Name
 
 {name}
@@ -49,30 +55,29 @@ Screening Result
 
 {screening}
 """
-        ),
-    ]
-)
+            ),
+        ]
+    )
+    chain = prompt | structured_llm
 
-chain = prompt | structured_llm
-
-
-def summary_agent(state: RecruitmentState):
+    matched = state.get("matched_skills", []) or []
+    missing = state.get("missing_skills", []) or []
 
     result = chain.invoke(
         {
-            "name": state["candidate_name"],
-            "education": state["education"],
-            "experience": state["experience"],
-            "matched_skills": ", ".join(state["matched_skills"]),
-            "missing_skills": ", ".join(state["missing_skills"]),
-            "match_score": state["match_score"],
-            "screening": state["screening_result"],
+            "name": _safe_str(state.get("candidate_name"), "Candidate"),
+            "education": _safe_str(state.get("education"), "Not specified"),
+            "experience": _safe_str(state.get("experience"), "Not specified"),
+            "matched_skills": ", ".join(str(x) for x in matched) if matched else "None listed",
+            "missing_skills": ", ".join(str(x) for x in missing) if missing else "None listed",
+            "match_score": state.get("match_score", 0.0),
+            "screening": _safe_str(state.get("screening_result"), "Screening complete"),
         }
     )
 
-    state["strengths"] = result.strengths
-    state["weaknesses"] = result.weaknesses
-    state["recommendation"] = result.recommendation
-    state["final_summary"] = result.final_summary
+    state["strengths"] = getattr(result, "strengths", []) or []
+    state["weaknesses"] = getattr(result, "weaknesses", []) or []
+    state["recommendation"] = getattr(result, "recommendation", "") or "Hold"
+    state["final_summary"] = getattr(result, "final_summary", "") or "Evaluation completed."
 
-    return state
+    return state
